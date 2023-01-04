@@ -1,0 +1,118 @@
+---
+- hosts: all
+  become: true
+  tasks:
+    - name: Modify /etc/sysctl.conf
+      lineinfile:
+        path: /etc/sysctl.conf
+        regexp: "^net\.ipv4\.conf\.(all|default)\.accept_redirects"
+        line: "net.ipv4.conf.\1.accept_redirects=0"
+      notify:
+        - restart network
+
+    - name: Modify /etc/sysctl.conf
+      lineinfile:
+        path: /etc/sysctl.conf
+        regexp: "^net\.ipv4\.conf\.(all|default)\.secure_redirects"
+        line: "net.ipv4.conf.\1.secure_redirects=0"
+      notify:
+        - restart network
+
+    - name: Modify /etc/securetty
+      lineinfile:
+        path: /etc/securetty
+        line: "tty[0-9]*"
+      notify:
+        - restart network
+
+    - name: Modify /etc/securetty
+      lineinfile:
+        path: /etc/securetty
+        line: "vc[0-9]*"
+      notify:
+        - restart network
+
+    - name: Modify /etc/ssh/sshd_config
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^PermitRootLogin"
+        line: "PermitRootLogin no"
+      notify:
+        - restart sshd
+
+    - name: Install Falcon sensor
+      yum:
+        name: https://miller-s3.s3.cn-north-1.amazonaws.com.cn/CrowdStrike/Linux/falcon-sensor-RHEL-CENTOS-ORACLE7.rpm
+      notify:
+        - start falcon-sensor
+
+    - name: Activate Falcon sensor
+      command: /opt/CrowdStrike/falconctl -s --cid=74712C2BA207406C8D318FAD11099566-60
+      notify:
+        - start falcon-sensor
+
+    - name: Download and install agent installer
+      get_url:
+        url: https://miller-s3.s3.cn-north-1.amazonaws.com.cn/agent_installer.sh
+        dest: /tmp/agent_installer.sh
+      become: true
+      notify:
+        - start agent-installer
+
+    - name: Make agent installer executable
+      file:
+        path: /tmp/agent_installer.sh
+        mode: 0755
+      become: true
+      notify:
+        - start agent-installer
+
+    - name: Start agent installer
+      command: /tmp/agent_installer.sh install_start --token eu:07901a39-ec8c-4dea-89f9-affeb318719c
+      become: true
+
+  handlers:
+    - name: restart network
+      service:
+        name: network
+        state: restarted
+
+    - name: restart sshd
+      service:
+        name: sshd
+        state: restarted
+
+
+     
+    - name: Install Falcon sensor
+      yum:
+        name: https://miller-s3.s3.cn-north-1.amazonaws.com.cn/CrowdStrike/Linux/falcon-sensor-RHEL-CENTOS-ORACLE7.rpm
+        state: present
+    
+    - name: Start Falcon sensor
+      shell: "/opt/CrowdStrike/falconctl -s --cid=74712C2BA207406C8D318FAD11099566-60"
+      args:
+        executable: /bin/bash
+    
+    - name: Enable Falcon sensor on boot
+      service:
+        name: falcon-sensor
+        enabled: true
+        state: started
+    
+    - name: Verify that Falcon sensor is running
+      shell: "ps -e | grep falcon-sensor"
+      register: falcon_sensor_status
+      failed_when: "falcon_sensor_status.stdout == ''"
+    
+    - name: Download agent installer
+      get_url:
+        url: https://miller-s3.s3.cn-north-1.amazonaws.com.cn/agent_installer.sh
+        dest: /tmp/agent_installer.sh
+        mode: 0755
+    
+    - name: Install and start agent
+      shell: "/tmp/agent_installer.sh install_start --token eu:07901a39-ec8c-4dea-89f9-affeb318719c"
+      args:
+        executable: /bin/bash
+    
