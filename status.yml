@@ -1,0 +1,12 @@
+---
+- name: Check SSH service status
+  hosts: all
+  become: true
+  tasks:
+    - name: Get SSH service status
+      shell: service ssh status
+      register: ssh_status
+
+    - name: Display SSH service status
+      debug:
+        var: ssh_status.stdout_lines
