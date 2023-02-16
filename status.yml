@@ -4,11 +4,9 @@
   become: true
   tasks:
     - name: Get SSH status
-      systemd:
-        name: sshd
-        state: status
+      shell: systemctl status sshd
       register: ssh_status
 
     - name: Display SSH status
       debug:
-        var: ssh_status
+        var: ssh_status.stdout
