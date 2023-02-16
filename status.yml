@@ -13,16 +13,16 @@
 
     - name: Get CS status
       shell: systemctl status falcon-sensor
-      register: falcon-sensor_status
+      register: cs_status
 
     - name: Display CS status
       debug:
-        var: falcon-sensor_status.stdout
+        var: cs_status.stdout
         
     - name: Get Rapid status
       shell: systemctl status ir_agent
-      register: iragent_status
+      register: rapid_status
 
     - name: Display Rapid status
       debug:
-        var: iragent_status.stdout
+        var: rapid_status.stdout
