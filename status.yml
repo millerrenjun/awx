@@ -3,10 +3,12 @@
   hosts: all
   become: true
   tasks:
-    - name: Get SSH service status
-      shell: service ssh status
+    - name: Get SSH status
+      systemd:
+        name: sshd
+        state: status
       register: ssh_status
 
-    - name: Display SSH service status
+    - name: Display SSH status
       debug:
-        var: ssh_status.stdout_lines
+        var: ssh_status
