@@ -10,3 +10,19 @@
     - name: Display SSH status
       debug:
         var: ssh_status.stdout
+
+    - name: Get CS status
+      shell: systemctl status falcon-sensor
+      register: falcon-sensor_status
+
+    - name: Display CS status
+      debug:
+        var: falcon-sensor_status.stdout
+        
+    - name: Get Rapid status
+      shell: systemctl status ir_agent
+      register: iragent_status
+
+    - name: Display Rapid status
+      debug:
+        var: iragent_status.stdout
